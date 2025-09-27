@@ -8,7 +8,7 @@ This Movie Recommender System is a content-based filtering application designed 
 A key feature of this application is its ability to direct the user to a specific download page when they click on a recommended movie, enhancing the practical utility of the system.
 
 🚀 Live Deployment
-Access the live application here:  ![](https://movie-recommanded-system-mdznazjo4pffjjgaatwc8m.streamlit.app/)
+Access the live application here:  https://movie-recommanded-system-mdznazjo4pffjjgaatwc8m.streamlit.app/
 
 ✨ Features
 Intelligent Recommendations: Uses content-based filtering (e.g., TF-IDF or vector space modeling) to find movies highly similar to the user's selected choice.
