@@ -5,6 +5,7 @@ import requests
 from requests.exceptions import RequestException
 import time
 import os
+import gdown
 
 # ----------------- Streamlit Page Config -----------------
 st.set_page_config(page_title="Movie Recommender 🎬", layout="wide")
@@ -36,6 +37,9 @@ def fetch_poster(movie_id):
     return "https://via.placeholder.com/500x750.png?text=No+Image"
 
 def recommend(movie):
+    if movies.empty or not similarity:
+        return [], []
+
     match = movies[movies['title'].str.lower() == movie.lower()]
     if match.empty:
         return [], []
@@ -56,32 +60,50 @@ def recommend(movie):
 def download_file_from_drive(file_id, filename):
     if os.path.exists(filename):
         os.remove(filename)  # Remove old or invalid file
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    with st.spinner(f"Downloading {filename}..."):
-        r = requests.get(url, stream=True)
-        r.raise_for_status()
-        with open(filename, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
+    url = f"https://drive.google.com/uc?id={file_id}"
+    gdown.download(url, filename, quiet=False)
 
 # ----------------- Load Data -----------------
 @st.cache_resource
 def load_data():
-    # Download large similarity matrix
     similarity_file_id = "17tW5chin2O_3rBIi5d8uRIQlYxC7v0kf"
-    download_file_from_drive(similarity_file_id, "similarity.pkl")
+    similarity_filename = "similarity.pkl"
+    movie_filename = "movie_list.pkl"
 
-    # Load local movie list
-    movies_dict = pickle.load(open("movie_list.pkl", "rb"))
-    movies = pd.DataFrame(movies_dict)
+    # Download similarity.pkl if missing
+    if not os.path.exists(similarity_filename):
+        try:
+            with st.spinner(f"Downloading {similarity_filename}..."):
+                download_file_from_drive(similarity_file_id, similarity_filename)
+        except Exception as e:
+            st.error(f"Failed to download {similarity_filename}: {e}")
 
-    similarity = pickle.load(open("similarity.pkl", "rb"))
-    return movies, similarity
+    # Load movie list
+    try:
+        with open(movie_filename, "rb") as f:
+            movies_dict = pickle.load(f)
+        movies_df = pd.DataFrame(movies_dict)
+    except Exception as e:
+        st.error(f"Failed to load {movie_filename}: {e}")
+        movies_df = pd.DataFrame()
+
+    # Load similarity matrix
+    try:
+        if os.path.exists(similarity_filename):
+            with open(similarity_filename, "rb") as f:
+                similarity_matrix = pickle.load(f)
+        else:
+            similarity_matrix = []
+    except Exception as e:
+        st.warning(f"Failed to load {similarity_filename}: {e}. The file may be corrupted or not a pickle file.")
+        similarity_matrix = []
+
+    return movies_df, similarity_matrix
 
 movies, similarity = load_data()
 
 # ----------------- Movie Selection -----------------
-movie_list = movies['title'].values
+movie_list = movies['title'].values if not movies.empty else []
 selected_movie = st.selectbox("🔎 Search or select a movie", movie_list)
 
 # ----------------- Custom CSS Styling -----------------
@@ -115,7 +137,7 @@ if st.button('🚀 Show Recommendations'):
         recommended_movie_names, recommended_movie_posters = recommend(selected_movie)
 
     if not recommended_movie_names:
-        st.error(f"❌ Sorry, '{selected_movie}' not found.")
+        st.warning(f"❌ No recommendations found for '{selected_movie}'. The data may not be loaded properly.")
     else:
         cols = st.columns(min(5, len(recommended_movie_names)), gap="large")
         for col, name, poster in zip(cols, recommended_movie_names, recommended_movie_posters):
