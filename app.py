@@ -52,14 +52,13 @@ def recommend(movie):
 
     return recommended_movie_names, recommended_movie_posters
 
-# ----------------- Download large file helper -----------------
+# ----------------- Download File from Google Drive -----------------
 def download_file_from_drive(file_id, filename):
-    """Download file from Google Drive using direct link. Overwrites if exists."""
     if os.path.exists(filename):
-        os.remove(filename)  # Remove invalid or old file
-    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        os.remove(filename)  # Remove old or invalid file
+    url = f"https://drive.google.com/uc?export=download&id={file_id}"
     with st.spinner(f"Downloading {filename}..."):
-        r = requests.get(download_url, stream=True)
+        r = requests.get(url, stream=True)
         r.raise_for_status()
         with open(filename, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
@@ -68,15 +67,15 @@ def download_file_from_drive(file_id, filename):
 # ----------------- Load Data -----------------
 @st.cache_resource
 def load_data():
-    # Download similarity.pkl (large file) from Google Drive
+    # Download large similarity matrix
     similarity_file_id = "17tW5chin2O_3rBIi5d8uRIQlYxC7v0kf"
     download_file_from_drive(similarity_file_id, "similarity.pkl")
 
-    # Load movie_list.pkl (small, kept in repo)
-    movies_dict = pickle.load(open('movie_list.pkl', 'rb'))
+    # Load local movie list
+    movies_dict = pickle.load(open("movie_list.pkl", "rb"))
     movies = pd.DataFrame(movies_dict)
 
-    similarity = pickle.load(open('similarity.pkl', 'rb'))
+    similarity = pickle.load(open("similarity.pkl", "rb"))
     return movies, similarity
 
 movies, similarity = load_data()
@@ -87,14 +86,14 @@ selected_movie = st.selectbox("🔎 Search or select a movie", movie_list)
 
 # ----------------- Custom CSS Styling -----------------
 st.markdown("""
-    <style>
-        body {background-color: #0e0e0e; color: #f5f5f5;}
-        .main-title {text-align: center; font-size: 50px; font-weight: bold; color: #e50914; margin-bottom: 10px;}
-        .subtitle {text-align: center; font-size: 18px; color: #b3b3b3; margin-bottom: 40px;}
-        .movie-card {background: #1c1c1c; border-radius: 15px; padding: 10px; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0px 4px 15px rgba(0,0,0,0.6);}
-        .movie-card:hover {transform: scale(1.05); box-shadow: 0px 6px 20px rgba(229,9,20,0.7);}
-        .movie-title {text-align: center; font-size: 16px; font-weight: bold; color: white; margin-top: 10px;}
-    </style>
+<style>
+    body {background-color: #0e0e0e; color: #f5f5f5;}
+    .main-title {text-align: center; font-size: 50px; font-weight: bold; color: #e50914; margin-bottom: 10px;}
+    .subtitle {text-align: center; font-size: 18px; color: #b3b3b3; margin-bottom: 40px;}
+    .movie-card {background: #1c1c1c; border-radius: 15px; padding: 10px; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0px 4px 15px rgba(0,0,0,0.6);}
+    .movie-card:hover {transform: scale(1.05); box-shadow: 0px 6px 20px rgba(229,9,20,0.7);}
+    .movie-title {text-align: center; font-size: 16px; font-weight: bold; color: white; margin-top: 10px;}
+</style>
 """, unsafe_allow_html=True)
 
 # ----------------- Header -----------------
