@@ -4,10 +4,11 @@ import streamlit as st
 import requests
 from requests.exceptions import RequestException
 import time
+import os
+import gdown  # For downloading files from Google Drive
 
 # ----------------- Streamlit Page Config -----------------
 st.set_page_config(page_title="Movie Recommender 🎬", layout="wide")
-
 
 # ----------------- Helper Functions -----------------
 @st.cache_data
@@ -16,15 +17,13 @@ def fetch_poster(movie_id):
     Fetch movie poster from TMDb API with retry and fallback.
     """
     try:
-        # Load API key from secrets.toml
-        api_key = st.secrets["TMDB_API_KEY"]
+       api_key = st.secrets["TMDB_API_KEY"]
     except Exception:
-        # Fallback: hardcoded key (use your new key)
-        api_key = "5d6bc3cf1a64beb1639a7556871b64b3"
+       api_key = "5d6bc3cf1a64beb1639a7556871b64b3"
 
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=en-US"
 
-    for attempt in range(3):  # Retry 3 times
+    for attempt in range(3):
         try:
             response = requests.get(url, timeout=8)
             response.raise_for_status()
@@ -38,9 +37,7 @@ def fetch_poster(movie_id):
             time.sleep(1)
             continue
 
-    # If all attempts fail or no poster, return placeholder
     return "https://via.placeholder.com/500x750.png?text=No+Image"
-
 
 def recommend(movie):
     """
@@ -66,7 +63,6 @@ def recommend(movie):
 
     return recommended_movie_names, recommended_movie_posters
 
-
 # ----------------- Custom CSS Styling -----------------
 st.markdown("""
     <style>
@@ -88,30 +84,40 @@ st.sidebar.markdown("## ℹ️ About")
 st.sidebar.write(
     "This app recommends movies similar to the one you select. Built with **Machine Learning** and **Streamlit**.")
 st.sidebar.write("🎯 Designed for a professional, Netflix-like experience.")
-
 st.sidebar.markdown("## 📩 Contact")
 st.sidebar.write("Created by: *Thota Eshwar*")
 st.sidebar.write("Email: eshwarthota2211@gmail.com")
 st.sidebar.write("[LinkedIn](www.linkedin.com/in/eshwar-thota-162a0832)")
 
-
-# ----------------- Load Data -----------------
+# ----------------- Download & Load Data -----------------
 @st.cache_resource
 def load_data():
-    movies_dict = pickle.load(open('movie_list.pkl', 'rb'))
-    movies = pd.DataFrame(movies_dict)
-    similarity = pickle.load(open('similarity.pkl', 'rb'))
-    return movies, similarity
+    # Google Drive links (shared with "Anyone with the link")
+    movie_list_id = "YOUR_MOVIE_LIST_FILE_ID"  # Optional if you want to host movie_list.pkl too
+    similarity_id = "17tW5chin2O_3rBIi5d8uRIQlYxC7v0kf"
 
+    # Download similarity.pkl
+    similarity_file = "similarity.pkl"
+    if not os.path.exists(similarity_file):
+        with st.spinner("Downloading similarity matrix..."):
+            gdown.download(f"https://drive.google.com/uc?id={similarity_id}", similarity_file, quiet=False)
+
+    # Download movie_list.pkl (optional)
+    movie_list_file = "movie_list.pkl"
+    if not os.path.exists(movie_list_file):
+        with st.spinner("Downloading movie list..."):
+            gdown.download(f"https://drive.google.com/uc?id={movie_list_id}", movie_list_file, quiet=False)
+
+    movies_dict = pickle.load(open(movie_list_file, 'rb'))
+    movies = pd.DataFrame(movies_dict)
+    similarity = pickle.load(open(similarity_file, 'rb'))
+    return movies, similarity
 
 movies, similarity = load_data()
 
 # ----------------- Movie Selection -----------------
 movie_list = movies['title'].values
-selected_movie = st.selectbox(
-    "🔎 Search or select a movie",
-    movie_list
-)
+selected_movie = st.selectbox("🔎 Search or select a movie", movie_list)
 
 # ----------------- Show Recommendations -----------------
 if st.button('🚀 Show Recommendations'):
