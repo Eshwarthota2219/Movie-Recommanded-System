@@ -1,3 +1,22 @@
+# ----------------- Auto Install Dependencies -----------------
+import subprocess
+import sys
+
+def install_if_missing(packages):
+    """
+    Install missing packages from a list of package names.
+    """
+    for package in packages:
+        try:
+            __import__(package)
+        except ImportError:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# List of required packages
+required_packages = ["gdown", "pandas", "streamlit", "requests"]
+install_if_missing(required_packages)
+
+# ----------------- Imports -----------------
 import pickle
 import pandas as pd
 import streamlit as st
@@ -5,7 +24,7 @@ import requests
 from requests.exceptions import RequestException
 import time
 import os
-import gdown  # For downloading files from Google Drive
+import gdown  # Now safe to import
 
 # ----------------- Streamlit Page Config -----------------
 st.set_page_config(page_title="Movie Recommender 🎬", layout="wide")
@@ -17,9 +36,9 @@ def fetch_poster(movie_id):
     Fetch movie poster from TMDb API with retry and fallback.
     """
     try:
-       api_key = st.secrets["TMDB_API_KEY"]
+        api_key = st.secrets["TMDB_API_KEY"]
     except Exception:
-       api_key = "5d6bc3cf1a64beb1639a7556871b64b3"
+        api_key = "5d6bc3cf1a64beb1639a7556871b64b3"
 
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=en-US"
 
@@ -82,7 +101,8 @@ st.markdown("<p class='subtitle'>Discover movies you'll love — powered by AI �
 # ----------------- Sidebar -----------------
 st.sidebar.markdown("## ℹ️ About")
 st.sidebar.write(
-    "This app recommends movies similar to the one you select. Built with **Machine Learning** and **Streamlit**.")
+    "This app recommends movies similar to the one you select. Built with **Machine Learning** and **Streamlit**."
+)
 st.sidebar.write("🎯 Designed for a professional, Netflix-like experience.")
 st.sidebar.markdown("## 📩 Contact")
 st.sidebar.write("Created by: *Thota Eshwar*")
