@@ -53,9 +53,9 @@ def recommend(movie):
     return recommended_movie_names, recommended_movie_posters
 
 # ----------------- Download large file helper -----------------
-def download_file_from_drive(drive_url, filename):
+def download_file_from_drive(file_id, filename):
+    """Download a file from Google Drive using direct download link"""
     if not os.path.exists(filename):
-        file_id = drive_url.split("/d/")[1].split("/")[0]
         download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
         with st.spinner(f"Downloading {filename}..."):
             r = requests.get(download_url, stream=True)
@@ -67,11 +67,9 @@ def download_file_from_drive(drive_url, filename):
 # ----------------- Load Data -----------------
 @st.cache_resource
 def load_data():
-    # Download similarity.pkl from Google Drive
-    download_file_from_drive(
-        "https://drive.google.com/file/d/17tW5chin2O_3rBIi5d8uRIQlYxC7v0kf/view?usp=sharing",
-        "similarity.pkl"
-    )
+    # Download similarity.pkl from Google Drive (correct file ID)
+    download_file_from_drive("17tW5chin2O_3rBIi5d8uRIQlYxC7v0kf", "similarity.pkl")
+    
     # Load movie_list.pkl (small, kept in repo)
     movies_dict = pickle.load(open('movie_list.pkl', 'rb'))
     movies = pd.DataFrame(movies_dict)
@@ -83,6 +81,32 @@ movies, similarity = load_data()
 # ----------------- Movie Selection -----------------
 movie_list = movies['title'].values
 selected_movie = st.selectbox("🔎 Search or select a movie", movie_list)
+
+# ----------------- Custom CSS Styling -----------------
+st.markdown("""
+    <style>
+        body {background-color: #0e0e0e; color: #f5f5f5;}
+        .main-title {text-align: center; font-size: 50px; font-weight: bold; color: #e50914; margin-bottom: 10px;}
+        .subtitle {text-align: center; font-size: 18px; color: #b3b3b3; margin-bottom: 40px;}
+        .movie-card {background: #1c1c1c; border-radius: 15px; padding: 10px; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0px 4px 15px rgba(0,0,0,0.6);}
+        .movie-card:hover {transform: scale(1.05); box-shadow: 0px 6px 20px rgba(229,9,20,0.7);}
+        .movie-title {text-align: center; font-size: 16px; font-weight: bold; color: white; margin-top: 10px;}
+    </style>
+""", unsafe_allow_html=True)
+
+# ----------------- Header -----------------
+st.markdown("<h1 class='main-title'>🍿 Movie Recommender System</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Discover movies you'll love — powered by AI 🎥</p>", unsafe_allow_html=True)
+
+# ----------------- Sidebar -----------------
+st.sidebar.markdown("## ℹ️ About")
+st.sidebar.write(
+    "This app recommends movies similar to the one you select. Built with **Machine Learning** and **Streamlit**.")
+st.sidebar.write("🎯 Designed for a professional, Netflix-like experience.")
+st.sidebar.markdown("## 📩 Contact")
+st.sidebar.write("Created by: *Thota Eshwar*")
+st.sidebar.write("Email: eshwarthota2211@gmail.com")
+st.sidebar.write("[LinkedIn](www.linkedin.com/in/eshwar-thota-162a0832)")
 
 # ----------------- Show Recommendations -----------------
 if st.button('🚀 Show Recommendations'):
