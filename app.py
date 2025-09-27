@@ -54,25 +54,28 @@ def recommend(movie):
 
 # ----------------- Download large file helper -----------------
 def download_file_from_drive(file_id, filename):
-    """Download a file from Google Drive using direct download link"""
-    if not os.path.exists(filename):
-        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-        with st.spinner(f"Downloading {filename}..."):
-            r = requests.get(download_url, stream=True)
-            r.raise_for_status()
-            with open(filename, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+    """Download file from Google Drive using direct link. Overwrites if exists."""
+    if os.path.exists(filename):
+        os.remove(filename)  # Remove invalid or old file
+    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    with st.spinner(f"Downloading {filename}..."):
+        r = requests.get(download_url, stream=True)
+        r.raise_for_status()
+        with open(filename, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
 
 # ----------------- Load Data -----------------
 @st.cache_resource
 def load_data():
-    # Download similarity.pkl from Google Drive (correct file ID)
-    download_file_from_drive("17tW5chin2O_3rBIi5d8uRIQlYxC7v0kf", "similarity.pkl")
-    
+    # Download similarity.pkl (large file) from Google Drive
+    similarity_file_id = "17tW5chin2O_3rBIi5d8uRIQlYxC7v0kf"
+    download_file_from_drive(similarity_file_id, "similarity.pkl")
+
     # Load movie_list.pkl (small, kept in repo)
     movies_dict = pickle.load(open('movie_list.pkl', 'rb'))
     movies = pd.DataFrame(movies_dict)
+
     similarity = pickle.load(open('similarity.pkl', 'rb'))
     return movies, similarity
 
@@ -100,8 +103,7 @@ st.markdown("<p class='subtitle'>Discover movies you'll love — powered by AI �
 
 # ----------------- Sidebar -----------------
 st.sidebar.markdown("## ℹ️ About")
-st.sidebar.write(
-    "This app recommends movies similar to the one you select. Built with **Machine Learning** and **Streamlit**.")
+st.sidebar.write("This app recommends movies similar to the one you select. Built with **Machine Learning** and **Streamlit**.")
 st.sidebar.write("🎯 Designed for a professional, Netflix-like experience.")
 st.sidebar.markdown("## 📩 Contact")
 st.sidebar.write("Created by: *Thota Eshwar*")
